@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Grade A Foods
 
-## Getting Started
+Food-safety & quality-grading SaaS for [gradeafoods.com](https://gradeafoods.com).
+Inspect facilities against weighted checklists, generate standardized letter
+grades (A–F), track supplier compliance over time, and produce audit-ready
+reports.
 
-First, run the development server:
+## Features
+
+- **Organizations & auth** — email/password sign-up creates an organization;
+  sessions are signed JWTs stored in an httpOnly cookie.
+- **Facilities** — register restaurants, processors, warehouses, farms, and
+  retailers.
+- **Checklists** — build reusable, weighted inspection templates. Mark
+  critical-control points that cap the grade at **F** when failed.
+- **Inspections** — run a checklist against a facility with Pass / Fail / N/A
+  per item, a live grade preview, and inspector notes.
+- **Grading** — weighted scoring (`earned ÷ applicable weight`) with thresholds
+  A ≥ 90, B ≥ 80, C ≥ 70, otherwise F. Any failed critical item forces an F.
+- **Reports** — clean, printable per-inspection audit reports.
+- **Dashboard** — grade distribution, average score, and recent activity.
+
+## Stack
+
+- [Next.js 16](https://nextjs.org/) (App Router) + React 19 + TypeScript
+- [Tailwind CSS v4](https://tailwindcss.com/)
+- [Prisma 7](https://www.prisma.io/) with the libSQL driver adapter (SQLite locally)
+- `jose` (session JWTs) + `bcryptjs` (password hashing) + `zod` (validation)
+
+## Getting started
 
 ```bash
+npm install
+cp .env.example .env        # then edit AUTH_SECRET
+npm run db:migrate          # create the SQLite database
+npm run db:seed             # load demo organization + sample inspections
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+**Demo login:** `demo@gradeafoods.com` / `demo1234`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Scripts
 
-## Learn More
+| Script | Description |
+| --- | --- |
+| `npm run dev` | Start the dev server |
+| `npm run build` | Generate the Prisma client and build for production |
+| `npm run start` | Run the production build |
+| `npm run lint` | ESLint |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm run db:migrate` | Apply migrations (dev) |
+| `npm run db:deploy` | Apply migrations (prod/CI) |
+| `npm run db:seed` | Seed demo data |
+| `npm run db:reset` | Drop, re-migrate, and reseed |
 
-To learn more about Next.js, take a look at the following resources:
+## Grading model
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Each applicable (non-N/A) checklist item contributes its `weight` to the
+denominator and, when passed, to the numerator:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+score% = round( earnedWeight / applicableWeight * 100 )
+```
 
-## Deploy on Vercel
+Any failed item flagged `critical` forces the overall grade to **F**, mirroring
+real health-code scoring.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Production notes
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+SQLite is used for local development. For production, point `DATABASE_URL` at a
+hosted [libSQL/Turso](https://turso.tech/) database (the adapter is already
+wired up) or change the Prisma datasource provider to `postgresql`.
