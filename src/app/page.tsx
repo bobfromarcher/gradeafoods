@@ -4,27 +4,35 @@ import { getSessionUser } from "@/lib/auth";
 
 const FEATURES = [
   {
-    title: "Configurable checklists",
-    body: "Build weighted inspection templates with critical-control points for any facility type — restaurants, processors, warehouses, farms.",
+    title: "Food Database & Scoring",
+    body: "Access 50,000+ food items with detailed nutritional profiles, contamination tracking, and real-time Grade A Foods Score (0-100) for safety, quality, compliance, and transparency.",
   },
   {
-    title: "Instant letter grades",
-    body: "Every inspection is scored automatically. A failed critical item caps the grade at F, just like real health-code scoring.",
+    title: "Contamination Tracking",
+    body: "Monitor heavy metals, pesticides, microbial contaminants, and allergens across your supply chain with real-time alerts and predictive risk modeling.",
   },
   {
-    title: "Supplier compliance",
-    body: "Track every facility's grade history and spot trends before they become recalls, fines, or failed audits.",
+    title: "Automated Authority Reporting",
+    body: "Automatically report food safety issues to FDA, USDA, CDC, and other regulatory authorities with pre-filled forms and required documentation.",
   },
   {
-    title: "Audit-ready reports",
-    body: "Generate clean, printable inspection reports your customers, regulators, and investors can trust.",
+    title: "Food Fraud Detection",
+    body: "AI-powered detection of ingredient substitution, geographic origin fraud, and supply chain anomalies with historical fraud database integration.",
+  },
+  {
+    title: "Supplier Compliance Management",
+    body: "Comprehensive supplier scoring, risk assessment, certification verification, and performance tracking with automated audit scheduling.",
+  },
+  {
+    title: "Recall Management",
+    body: "End-to-end recall planning, execution, distribution tracking, customer notification, and post-recall analysis with regulatory reporting.",
   },
 ];
 
 const STATS = [
-  { value: "A–F", label: "Standardized grading" },
-  { value: "100%", label: "Digital paper trail" },
-  { value: "Multi-site", label: "Org-wide visibility" },
+  { value: "50,000+", label: "Food items tracked" },
+  { value: "100%", label: "Automated reporting" },
+  { value: "AI-Powered", label: "Fraud detection" },
 ];
 
 export default async function Home() {
@@ -65,24 +73,22 @@ export default async function Home() {
         <section className="mx-auto grid w-full max-w-6xl gap-12 px-6 pt-12 pb-20 lg:grid-cols-2 lg:items-center lg:pt-20">
           <div>
             <span className="inline-flex items-center gap-2 rounded-full bg-brand-100 px-3 py-1 text-xs font-medium text-brand-800">
-              Food safety &amp; quality grading platform
+              Comprehensive food compliance & safety platform
             </span>
             <h1 className="mt-5 text-4xl font-bold tracking-tight text-ink sm:text-5xl">
-              Grade every facility.
+              Food safety transparent.
               <br />
-              <span className="text-brand-600">Trust every supplier.</span>
+              <span className="text-brand-600">Compliance automated.</span>
             </h1>
             <p className="mt-5 max-w-xl text-lg text-ink/70">
-              Grade A Foods turns food-safety inspections into standardized
-              letter grades. Run weighted checklists, flag critical violations,
-              and produce audit-ready reports in minutes — not spreadsheets.
+              Grade A Foods provides end-to-end food compliance tracking from farm to table. Monitor contamination, track regulatory compliance, detect food fraud, and automatically report to authorities — all in one platform.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
                 href={user ? "/dashboard" : "/register"}
                 className="rounded-lg bg-brand-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700"
               >
-                {user ? "Go to dashboard" : "Start grading free"}
+                {user ? "Go to dashboard" : "Start free trial"}
               </Link>
               <Link
                 href="/login"
@@ -105,20 +111,20 @@ export default async function Home() {
             <div className="rounded-2xl border border-brand-100 bg-white p-6 shadow-xl shadow-brand-900/5">
               <div className="flex items-center justify-between border-b border-gray-100 pb-4">
                 <div>
-                  <p className="text-sm text-ink/50">Inspection report</p>
-                  <p className="font-semibold text-ink">Riverside Kitchen</p>
+                  <p className="text-sm text-ink/50">Compliance Score</p>
+                  <p className="font-semibold text-ink">Organic Spinach</p>
                 </div>
                 <span className="grid h-14 w-14 place-items-center rounded-xl bg-emerald-100 text-2xl font-bold text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
-                  A
+                  94
                 </span>
               </div>
               <ul className="mt-4 space-y-3 text-sm">
                 {[
-                  ["Cold holding ≤ 41°F", true],
-                  ["Handwashing stations stocked", true],
-                  ["Allergen labeling present", true],
-                  ["Pest control log current", false],
-                ].map(([label, pass]) => (
+                  ["Safety Score", "96/100", true],
+                  ["Quality Score", "92/100", true],
+                  ["Compliance Score", "95/100", true],
+                  ["Transparency Score", "93/100", true],
+                ].map(([label, score, pass]) => (
                   <li
                     key={label as string}
                     className="flex items-center justify-between"
@@ -131,13 +137,13 @@ export default async function Home() {
                           : "font-medium text-amber-600"
                       }
                     >
-                      {pass ? "Pass" : "Needs attention"}
+                      {score}
                     </span>
                   </li>
                 ))}
               </ul>
               <div className="mt-5 rounded-lg bg-brand-50 p-3 text-sm text-brand-800">
-                Weighted score <strong>92.5%</strong> · 0 critical violations
+                <strong>Zero contamination alerts</strong> · All certifications valid
               </div>
             </div>
           </div>
@@ -146,9 +152,9 @@ export default async function Home() {
         <section className="border-y border-brand-100 bg-white">
           <div className="mx-auto w-full max-w-6xl px-6 py-16">
             <h2 className="text-2xl font-bold tracking-tight text-ink">
-              Everything you need to run a compliance program
+              Everything you need for complete food compliance
             </h2>
-            <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
               {FEATURES.map((f) => (
                 <div key={f.title}>
                   <div className="mb-3 grid h-10 w-10 place-items-center rounded-lg bg-brand-100 font-bold text-brand-700">
