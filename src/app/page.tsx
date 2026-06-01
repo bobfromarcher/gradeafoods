@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { getSessionUser } from "@/lib/auth";
+import { EmailCapture } from "@/components/EmailCapture";
 
 const FEATURES = [
   {
@@ -85,17 +86,26 @@ export default async function Home() {
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
-                href={user ? "/dashboard" : "/register"}
+                href="/calculator"
                 className="rounded-lg bg-brand-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700"
               >
-                {user ? "Go to dashboard" : "Start free trial"}
+                Calculate your grade
               </Link>
-              <Link
-                href="/login"
-                className="rounded-lg border border-brand-200 bg-white px-5 py-3 text-sm font-semibold text-brand-700 transition hover:bg-brand-50"
-              >
-                Sign in
-              </Link>
+              {user ? (
+                <Link
+                  href="/dashboard"
+                  className="rounded-lg border border-brand-200 bg-white px-5 py-3 text-sm font-semibold text-brand-700 transition hover:bg-brand-50"
+                >
+                  Go to dashboard
+                </Link>
+              ) : (
+                <Link
+                  href="/login"
+                  className="rounded-lg border border-brand-200 bg-white px-5 py-3 text-sm font-semibold text-brand-700 transition hover:bg-brand-50"
+                >
+                  Sign in
+                </Link>
+              )}
             </div>
             <dl className="mt-12 grid grid-cols-3 gap-6">
               {STATS.map((s) => (
@@ -164,6 +174,20 @@ export default async function Home() {
                   <p className="mt-1 text-sm text-ink/65">{f.body}</p>
                 </div>
               ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="border-t border-brand-100 bg-white">
+          <div className="mx-auto w-full max-w-6xl px-6 py-16">
+            <h2 className="text-2xl font-bold tracking-tight text-ink">
+              Stay in the loop
+            </h2>
+            <p className="mt-2 text-ink/70">
+              Be the first to know when we launch new features and get early access.
+            </p>
+            <div className="mt-6 max-w-md">
+              <EmailCapture />
             </div>
           </div>
         </section>
