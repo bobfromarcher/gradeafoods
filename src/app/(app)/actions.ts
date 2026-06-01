@@ -210,3 +210,24 @@ export async function saveInspection(formData: FormData): Promise<void> {
   }
   redirect(`/inspections/${inspection.id}`);
 }
+
+/* --------------------------- Email Capture -------------------------- */
+
+const emailSchema = z.object({
+  email: z.string().email("Enter a valid email address"),
+});
+
+export async function captureEmail(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const parsed = emailSchema.safeParse({
+    email: formData.get("email"),
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid email" };
+  }
+  // Placeholder: in production, send the report via email service
+  console.log("Email captured:", parsed.data.email);
+  return { error: null };
+}

@@ -56,3 +56,25 @@ export function letterFor(scorePercent: number): Grade {
   if (scorePercent >= 70) return "C";
   return "F";
 }
+
+export interface ReportableResult extends GradeableResult {
+  text?: string;
+}
+
+export function generateReport(outcome: GradeOutcome, results: ReportableResult[]): string {
+  const lines: string[] = [];
+  lines.push(`Grade: ${outcome.grade}`);
+  lines.push(`Score: ${outcome.scorePercent}%`);
+  lines.push(`Earned Weight: ${outcome.earnedWeight} / ${outcome.applicableWeight}`);
+  if (outcome.criticalFailures > 0) {
+    lines.push(`Critical Failures: ${outcome.criticalFailures}`);
+  }
+  lines.push("");
+  lines.push("Item Breakdown:");
+  for (const result of results) {
+    const status = result.status === "NA" ? "N/A" : result.status;
+    const label = result.text ? `"${result.text}"` : `item`;
+    lines.push(`- [${status}] ${label} (weight ${result.weight}) ${result.critical ? "CRITICAL" : ""}`);
+  }
+  return lines.join("\n");
+}
