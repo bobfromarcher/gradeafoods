@@ -8,17 +8,24 @@ export const runtime = "nodejs";
 // (logs + 200); wire to the DB once a subscription model exists.
 export async function POST(req: NextRequest) {
   const sig = req.headers.get("stripe-signature");
-  const whsec = process.env.STRIPE_WEBHOOK_SECRET;
+  // Accept multiple signing secrets (comma-separated) so several Stripe webhook
+  // endpoints (apex domain + vercel.app) can all be verified.
+  const secrets = (process.env.STRIPE_WEBHOOK_SECRET ?? "")
+    .split(",").map((s) => s.trim()).filter(Boolean);
   const body = await req.text();
 
-  let event;
-  try {
-    event = whsec && sig
-      ? stripe.webhooks.constructEvent(body, sig, whsec)
-      : JSON.parse(body);
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : "bad signature";
-    return NextResponse.json({ error: `Webhook error: ${msg}` }, { status: 400 });
+  let event: ReturnType<typeof stripe.webhooks.constructEvent> | undefined;
+  if (secrets.length && sig) {
+    for (const sec of secrets) {
+      try { event = stripe.webhooks.constructEvent(body, sig, sec); break; }
+      catch { /* try next secret */ }
+    }
+    if (!event) {
+      return NextResponse.json({ error: "Webhook signature verification failed" }, { status: 400 });
+    }
+  } else {
+    try { event = JSON.parse(body); }
+    catch { return NextResponse.json({ error: "bad body" }, { status: 400 }); }
   }
 
   switch (event.type) {
