@@ -16,7 +16,9 @@ export async function POST(req: NextRequest) {
   const body = await req.text();
 
   let event: Stripe.Event | undefined;
-  if (secrets.length && sig) {
+  if (secrets.length) {
+    // Secrets configured -> signature is REQUIRED (reject unsigned/forged).
+    if (!sig) return NextResponse.json({ error: "missing signature" }, { status: 400 });
     for (const sec of secrets) {
       try { event = stripe.webhooks.constructEvent(body, sig, sec); break; }
       catch { /* try next secret */ }
@@ -25,6 +27,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Webhook signature verification failed" }, { status: 400 });
     }
   } else {
+    // No secret configured (dev only) -> accept raw.
     try { event = JSON.parse(body) as Stripe.Event; }
     catch { return NextResponse.json({ error: "bad body" }, { status: 400 }); }
   }
