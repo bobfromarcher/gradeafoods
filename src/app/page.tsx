@@ -17,10 +17,10 @@ export default function LandingPage() {
           <div className="hidden md:flex items-center space-x-8">
             <a href="#features" className="text-sm font-medium text-ink/80 hover:text-ink transition-colors">Features</a>
             <a href="#how-it-works" className="text-sm font-medium text-ink/80 hover:text-ink transition-colors">How it works</a>
-            <a href="#pricing" className="text-sm font-medium text-ink/80 hover:text-ink transition-colors">Pricing</a>
+            <a href="/pricing" className="text-sm font-medium text-ink/80 hover:text-ink transition-colors">Pricing</a>
             <a href="#faq" className="text-sm font-medium text-ink/80 hover:text-ink transition-colors">FAQ</a>
             <Link
-              href="/register"
+              href="/pricing"
               className="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold text-white bg-brand-700 rounded-lg hover:bg-brand-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 transition-colors"
             >
               Get started
