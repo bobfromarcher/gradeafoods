@@ -12,10 +12,27 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const SITE = "https://gradeafoods.com";
+const DESC = "Inspect, score, and grade food facilities. Run quality checklists, track supplier compliance, and generate audit-ready reports. By de Montfort LLC.";
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE),
   title: "Grade A Foods — Food Safety & Quality Grading",
-  description:
-    "Inspect, score, and grade food facilities. Run quality checklists, track supplier compliance, and generate audit-ready reports.",
+  description: DESC,
+  applicationName: "Grade A Foods",
+  authors: [{ name: "de Montfort LLC" }],
+  openGraph: {
+    type: "website",
+    url: SITE,
+    siteName: "Grade A Foods",
+    title: "Grade A Foods — Food Safety & Quality Grading",
+    description: DESC,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Grade A Foods — Food Safety & Quality Grading",
+    description: DESC,
+  },
+  robots: { index: true, follow: true },
 };
 
 export default function RootLayout({
