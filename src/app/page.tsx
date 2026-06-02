@@ -250,7 +250,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="mt-8 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center text-sm text-white/50">
-            <p>&copy; {new Date().getFullYear()} GradeAFoods. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} GradeAFoods — a de Montfort LLC company. All rights reserved.</p>
             <div className="flex space-x-4 mt-4 md:mt-0">
               <a href="/privacy" className="hover:text-white transition-colors">Privacy</a>
               <a href="/terms" className="hover:text-white transition-colors">Terms</a>

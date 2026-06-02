@@ -25,7 +25,21 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body className="min-h-full antialiased">{children}</body>
+      <body className="min-h-full antialiased">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            "name": "de Montfort LLC",
+            "url": "https://gradeafoods.com",
+            "logo": "https://gradeafoods.com/favicon.ico",
+            "description": "de Montfort LLC builds food safety and quality software including Grade A Foods.",
+            "brand": { "@type": "Brand", "name": "Grade A Foods" },
+            "contactPoint": { "@type": "ContactPoint", "contactType": "customer support", "email": "support@gradeafoods.com" }
+          }) }}
+        />
+        {children}</body>
     </html>
   );
 }
