@@ -16,9 +16,22 @@
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
+/* Design tokens imported from swarm/assets/design-system.css */
 :root {
   --background: #f8faf9;
   --foreground: #0b1f17;
+  --color-accent: var(--color-brand-500);
+  --color-accent-hover: var(--color-brand-600);
+  --color-accent-light: var(--color-brand-100);
+  --color-accent-dark: var(--color-brand-700);
+  --color-surface: #ffffff;
+  --color-muted: #f8faf9;
+  --radius: 0.5rem;
+  --spacing-unit: 0.5rem; /* 8px */
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 html,
