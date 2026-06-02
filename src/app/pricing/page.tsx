@@ -56,8 +56,7 @@ export default function PricingPage() {
         ))}
       </div>
       <p style={{ color: "#94a3b8", fontSize: 13, marginTop: 32, textAlign: "center" }}>
-        Secure payments by Stripe. Test mode — use card 4242 4242 4242 4242.
-      </p>
+        Secure payments by Stripe.</p>
     </main>
   );
 }
