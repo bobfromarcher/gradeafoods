@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 
 export const runtime = "nodejs";
@@ -14,7 +15,7 @@ export async function POST(req: NextRequest) {
     .split(",").map((s) => s.trim()).filter(Boolean);
   const body = await req.text();
 
-  let event: ReturnType<typeof stripe.webhooks.constructEvent> | undefined;
+  let event: Stripe.Event | undefined;
   if (secrets.length && sig) {
     for (const sec of secrets) {
       try { event = stripe.webhooks.constructEvent(body, sig, sec); break; }
@@ -24,10 +25,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Webhook signature verification failed" }, { status: 400 });
     }
   } else {
-    try { event = JSON.parse(body); }
+    try { event = JSON.parse(body) as Stripe.Event; }
     catch { return NextResponse.json({ error: "bad body" }, { status: 400 }); }
   }
 
+  if (!event) return NextResponse.json({ error: "no event" }, { status: 400 });
   switch (event.type) {
     case "checkout.session.completed":
     case "customer.subscription.created":
