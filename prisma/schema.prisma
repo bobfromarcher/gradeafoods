@@ -1,0 +1,108 @@
+// Grade A Foods — food safety & quality-grading SaaS
+// Docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+
+  users      User[]
+  facilities Facility[]
+  templates  ChecklistTemplate[]
+  inspections Inspection[]
+}
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  name           String
+  passwordHash   String
+  role           String   @default("INSPECTOR") // ADMIN | INSPECTOR
+  organizationId String
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  inspections  Inspection[]
+}
+
+model Facility {
+  id             String   @id @default(cuid())
+  name           String
+  type           String   @default("RESTAURANT") // RESTAURANT | PROCESSOR | WAREHOUSE | FARM | RETAIL
+  address        String?
+  contactName    String?
+  contactEmail   String?
+  organizationId String
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  inspections  Inspection[]
+}
+
+model ChecklistTemplate {
+  id             String   @id @default(cuid())
+  name           String
+  description    String?
+  organizationId String
+  createdAt      DateTime @default(now())
+
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  items        ChecklistItem[]
+  inspections  Inspection[]
+}
+
+model ChecklistItem {
+  id          String @id @default(cuid())
+  templateId  String
+  category    String
+  text        String
+  weight      Int    @default(1)
+  critical    Boolean @default(false)
+  order       Int    @default(0)
+
+  template ChecklistTemplate  @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  results  InspectionResult[]
+}
+
+model Inspection {
+  id             String   @id @default(cuid())
+  facilityId     String
+  templateId     String
+  inspectorId    String
+  organizationId String
+  status         String   @default("DRAFT") // DRAFT | COMPLETED
+  scorePercent   Float    @default(0)
+  grade          String   @default("NA") // A | B | C | F | NA
+  notes          String?
+  conductedAt    DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  facility     Facility           @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  template     ChecklistTemplate  @relation(fields: [templateId], references: [id])
+  inspector    User               @relation(fields: [inspectorId], references: [id])
+  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  results      InspectionResult[]
+}
+
+model InspectionResult {
+  id           String  @id @default(cuid())
+  inspectionId String
+  itemId       String
+  status       String  @default("PASS") // PASS | FAIL | NA
+  note         String?
+
+  inspection Inspection    @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  item       ChecklistItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([inspectionId, itemId])
+}

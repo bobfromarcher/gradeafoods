@@ -1,0 +1,68 @@
+name: ci
+# de Montfort standard CI gate. Runs on every PR + push. The review-agent will
+# NOT auto-merge a PR until this passes (checks_ok), so broken code can't land.
+# Auto-detects the stack (Node/TS or Python) and runs lint + tests if present.
+# No-op (green) for repos that have neither yet, so it never blocks docs-only PRs.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # --- Node / TypeScript ---
+      - name: Detect Node project
+        id: node
+        run: |
+          if [ -f package.json ]; then echo "present=true" >> "$GITHUB_OUTPUT"; else echo "present=false" >> "$GITHUB_OUTPUT"; fi
+      - uses: actions/setup-node@v4
+        if: steps.node.outputs.present == 'true'
+        with:
+          node-version: "20"
+      - name: Node install
+        if: steps.node.outputs.present == 'true'
+        run: npm ci || npm install
+      - name: Node lint (if defined)
+        if: steps.node.outputs.present == 'true'
+        run: npm run lint --if-present
+      - name: Node build (if defined)
+        if: steps.node.outputs.present == 'true'
+        run: npm run build --if-present
+      - name: Node test (if defined)
+        if: steps.node.outputs.present == 'true'
+        run: npm test --if-present
+
+      # --- Python ---
+      - name: Detect Python project
+        id: py
+        run: |
+          if ls requirements.txt pyproject.toml setup.py >/dev/null 2>&1; then echo "present=true" >> "$GITHUB_OUTPUT"; else echo "present=false" >> "$GITHUB_OUTPUT"; fi
+      - uses: actions/setup-python@v5
+        if: steps.py.outputs.present == 'true'
+        with:
+          python-version: "3.12"
+      - name: Python install
+        if: steps.py.outputs.present == 'true'
+        run: |
+          python -m pip install --upgrade pip
+          [ -f requirements.txt ] && pip install -r requirements.txt || true
+          pip install pytest ruff || true
+      - name: Python lint
+        if: steps.py.outputs.present == 'true'
+        run: ruff check .          # fails the gate on lint errors
+      - name: Python test
+        if: steps.py.outputs.present == 'true'
+        run: |
+          # Fail on real test failures; stay green when there are simply no tests
+          # (pytest exit 5 = "no tests collected"). Any other non-zero = real fail.
+          pytest -q; rc=$?
+          if [ "$rc" -eq 5 ]; then echo "no tests yet — passing"; exit 0; fi
+          exit $rc
+
+      - name: Done
+        run: echo "CI gate complete."

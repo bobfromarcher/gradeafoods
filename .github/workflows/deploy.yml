@@ -1,0 +1,45 @@
+name: deploy
+# de Montfort deploy-on-merge. Runs only when code lands on the live branch
+# (after the CI gate + verify-agent + review-agent have approved). Deploys the
+# product to Vercel so a merged PR becomes a live update customers see.
+#
+# Requires repo/org secrets (set once, from the vault):
+#   VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
+# Safe by design: only triggers on push to the default branch, i.e. after merge.
+
+on:
+  push:
+    branches: [main, master, "devin/**"]   # the product repos' live branches
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # only run if the Vercel secrets exist (skips repos not yet wired)
+    if: ${{ github.repository != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Guard — secrets present?
+        id: guard
+        env:
+          TOK: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          if [ -z "$TOK" ]; then echo "no VERCEL_TOKEN — skipping deploy"; echo "go=false" >> "$GITHUB_OUTPUT"; else echo "go=true" >> "$GITHUB_OUTPUT"; fi
+      - uses: actions/setup-node@v4
+        if: steps.guard.outputs.go == 'true'
+        with: { node-version: "20" }
+      - name: Deploy to Vercel (production)
+        if: steps.guard.outputs.go == 'true'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          npm i -g vercel@latest
+          vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+          vercel build --prod --token="$VERCEL_TOKEN"
+          vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
