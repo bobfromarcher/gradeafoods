@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { stripe } from "@/lib/stripe";
 
 export const runtime = "nodejs";
 
-// Stripe webhook. Verifies signature when STRIPE_WEBHOOK_SECRET is set, then
+// Author: Bob Robert. Stripe callbacks always require signature verification.
+// Stripe webhook. Verifies STRIPE_WEBHOOK_SECRET, then
 // records the key subscription lifecycle events. Kept side-effect-light for v1
 // (logs + 200); wire to the DB once a subscription model exists.
 export async function POST(req: NextRequest) {
@@ -15,31 +15,26 @@ export async function POST(req: NextRequest) {
     .split(",").map((s) => s.trim()).filter(Boolean);
   const body = await req.text();
 
-  let event: Stripe.Event | undefined;
-  if (secrets.length) {
-    // Secrets configured -> signature is REQUIRED (reject unsigned/forged).
-    if (!sig) return NextResponse.json({ error: "missing signature" }, { status: 400 });
-    for (const sec of secrets) {
-      try { event = stripe.webhooks.constructEvent(body, sig, sec); break; }
-      catch { /* try next secret */ }
-    }
-    if (!event) {
-      return NextResponse.json({ error: "Webhook signature verification failed" }, { status: 400 });
-    }
-  } else {
-    // No secret configured (dev only) -> accept raw.
-    try { event = JSON.parse(body) as Stripe.Event; }
-    catch { return NextResponse.json({ error: "bad body" }, { status: 400 }); }
+  if (!secrets.length) {
+    return NextResponse.json({ error: "Webhook is not configured" }, { status: 503 });
   }
+  if (!sig) return NextResponse.json({ error: "missing signature" }, { status: 400 });
 
-  if (!event) return NextResponse.json({ error: "no event" }, { status: 400 });
+  let event: Stripe.Event | undefined;
+  for (const sec of secrets) {
+    try { event = Stripe.webhooks.constructEvent(body, sig, sec); break; }
+    catch { /* Try the next configured signing secret. */ }
+  }
+  if (!event) {
+    return NextResponse.json({ error: "Webhook signature verification failed" }, { status: 400 });
+  }
   switch (event.type) {
     case "checkout.session.completed":
     case "customer.subscription.created":
     case "customer.subscription.updated":
     case "customer.subscription.deleted":
       console.log(`[stripe] ${event.type}`, event.data?.object?.id ?? "");
-      // TODO: persist subscription status to the Organization when the model exists.
+      // This acknowledges a verified receipt; subscription entitlements are not provisioned here.
       break;
     default:
       break;

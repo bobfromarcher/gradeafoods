@@ -1,15 +1,28 @@
 import Stripe from "stripe";
 
-// Server-only Stripe client. Uses STRIPE_SECRET_KEY from env (TEST key in dev;
-// swap to a live key in the vault only after the flow is verified).
-const key = process.env.STRIPE_SECRET_KEY;
-if (!key) {
-  // Don't crash the whole app at import time in environments without billing;
-  // routes that need Stripe will error clearly instead.
-  console.warn("STRIPE_SECRET_KEY is not set — billing routes will fail.");
+// Author: Bob Robert. Builds do not need access to payment credentials.
+let cachedClient: Stripe | undefined;
+let cachedKey: string | undefined;
+
+function getClient(): Stripe {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) throw new Error("Stripe is not configured");
+  if (!cachedClient || cachedKey !== key) {
+    cachedClient = new Stripe(key);
+    cachedKey = key;
+  }
+  return cachedClient;
 }
 
-export const stripe = new Stripe(key ?? "");
+// Fail closed when billing is actually used, while allowing imports and builds
+// without a payment key. Bind SDK methods to their real client instance.
+export const stripe = new Proxy({} as Stripe, {
+  get(_target, property) {
+    const client = getClient();
+    const value = Reflect.get(client, property, client);
+    return typeof value === "function" ? value.bind(client) : value;
+  },
+});
 
 // Single source of truth for plans. price_data is created inline so no Stripe
 // dashboard Price IDs are required to start — easy to swap to real Price IDs later.

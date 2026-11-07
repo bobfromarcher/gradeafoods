@@ -1,45 +1,94 @@
-name: deploy
-# de Montfort deploy-on-merge. Runs only when code lands on the live branch
-# (after the CI gate + verify-agent + review-agent have approved). Deploys the
-# product to Vercel so a merged PR becomes a live update customers see.
-#
-# Requires repo/org secrets (set once, from the vault):
-#   VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
-# Safe by design: only triggers on push to the default branch, i.e. after merge.
-
+# Author: Bob Robert.
+name: reviewed-production
 on:
-  push:
-    branches: [main, master, "devin/**"]   # the product repos' live branches
   workflow_dispatch:
-
+    inputs:
+      release_mode:
+        description: Validate only, or explicitly request production
+        type: choice
+        options: [validate, production]
+        default: validate
+        required: true
+      confirm_sha:
+        description: Full 40-character commit SHA, required for production
+        type: string
+        required: false
+permissions:
+  contents: read
 concurrency:
-  group: deploy-${{ github.ref }}
-  cancel-in-progress: true
-
+  group: reviewed-production
+  cancel-in-progress: false
 jobs:
-  deploy:
+  verify:
     runs-on: ubuntu-latest
-    # only run if the Vercel secrets exist (skips repos not yet wired)
-    if: ${{ github.repository != '' }}
+    timeout-minutes: 20
+    outputs:
+      production: ${{ steps.authorize.outputs.production }}
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
     steps:
-      - uses: actions/checkout@v4
-      - name: Guard — secrets present?
-        id: guard
-        env:
-          TOK: ${{ secrets.VERCEL_TOKEN }}
-        run: |
-          if [ -z "$TOK" ]; then echo "no VERCEL_TOKEN — skipping deploy"; echo "go=false" >> "$GITHUB_OUTPUT"; else echo "go=true" >> "$GITHUB_OUTPUT"; fi
-      - uses: actions/setup-node@v4
-        if: steps.guard.outputs.go == 'true'
-        with: { node-version: "20" }
-      - name: Deploy to Vercel (production)
-        if: steps.guard.outputs.go == 'true'
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - name: Authorize exact source
+        id: authorize
+        run: python3 tools/release_guard.py
+      - name: Release authorization regression checks
+        run: python3 -m unittest discover -s tools -p 'test_release_guard.py' -v
+      - name: Install exact application dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Block known high or critical runtime dependency advisories
+        run: npm audit --omit=dev --audit-level=high
+      - name: Generate local Prisma client without a database mutation
+        run: npm exec --offline -- prisma generate
+      - name: Lint
+        run: npm run lint
+      - name: Type check
+        run: npm run typecheck
+      - name: Payment configuration regression checks without provider calls
+        run: npm test
+      - name: Build
+        run: npm run build
+  publish:
+    needs: verify
+    if: needs.verify.result == 'success' && needs.verify.outputs.production == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production-reviewed
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - name: Recheck authorization before release-tool installation
+        run: python3 tools/release_guard.py
+      - name: Install locked release tools without lifecycle scripts
+        run: npm ci --prefix .github/release-tools --ignore-scripts --no-audit --no-fund
+      - name: Require complete provider configuration
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          npm i -g vercel@latest
-          vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
-          vercel build --prod --token="$VERCEL_TOKEN"
-          vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+          test -n "$VERCEL_TOKEN" && test -n "$VERCEL_ORG_ID" && test -n "$VERCEL_PROJECT_ID"
+      - name: Read linked production build configuration
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: .github/release-tools/node_modules/.bin/vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+      - name: Build reviewed production source without provider token in the environment
+        run: .github/release-tools/node_modules/.bin/vercel build --prod
+      - name: Publish only the successfully built output
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: .github/release-tools/node_modules/.bin/vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"

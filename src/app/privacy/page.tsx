@@ -1,5 +1,7 @@
+import Link from "next/link";
+
 export const metadata = {
-  title: "Privacy Policy — Grade A Foods",
+  title: "Privacy Policy, Grade A Foods",
   description: "How Grade A Foods, operated by de Montfort LLC, collects, uses, and protects your data.",
 };
 
@@ -7,7 +9,7 @@ export default function PrivacyPage() {
   const updated = "June 2, 2026";
   return (
     <main style={{ maxWidth: 760, margin: "0 auto", padding: "64px 24px", fontFamily: "-apple-system, Segoe UI, Roboto, sans-serif", color: "#0f172a", lineHeight: 1.7 }}>
-      <a href="/" style={{ color: "#2563eb", textDecoration: "none", fontSize: 14 }}>← Back to Grade A Foods</a>
+      <Link href="/" style={{ color: "#2563eb", textDecoration: "none", fontSize: 14 }}>← Back to Grade A Foods</Link>
       <h1 style={{ fontSize: 36, fontWeight: 800, margin: "16px 0 4px" }}>Privacy Policy</h1>
       <p style={{ color: "#64748b", marginTop: 0 }}>Last updated: {updated}</p>
 
